@@ -2,6 +2,7 @@ import logging
 import time as time_module
 from dataclasses import dataclass
 from datetime import datetime, time
+from zoneinfo import ZoneInfo
 
 from src.kis_client import KISClient
 from src.risk import RiskManager
@@ -9,8 +10,13 @@ from src.strategy import MovingAverageCrossStrategy
 
 logger = logging.getLogger("daytrader")
 
+KST = ZoneInfo("Asia/Seoul")
 MARKET_OPEN = time(9, 0)
 MARKET_CLOSE = time(15, 30)
+
+
+def now_kst() -> datetime:
+    return datetime.now(KST)
 
 
 @dataclass
@@ -120,7 +126,7 @@ class DayTrader:
                 pos.qty * self._safe_current_price(code) for code, pos in self.positions.items()
             )
 
-        today = datetime.now().date()
+        today = now_kst().date()
         if self._trading_date != today:
             self._trading_date = today
             self.risk.start_day(equity)
@@ -176,7 +182,7 @@ class DayTrader:
         )
 
         while True:
-            now = datetime.now()
+            now = now_kst()
             if not self.is_market_open(now):
                 logger.info("장 시간이 아닙니다 (%s). 대기합니다.", now.strftime("%H:%M:%S"))
                 self._forced_close_done = False
