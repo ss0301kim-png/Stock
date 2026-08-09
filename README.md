@@ -19,11 +19,59 @@
 
 ## 설치
 
+### 공통 (수동 설치, macOS/Linux/Windows 어디서나)
+
 ```bash
 pip install -r requirements.txt
 cp .env.example .env
 # .env 파일을 열어 앱키/시크릿/계좌번호/전략 파라미터를 채워넣으세요
 ```
+
+### Windows 바탕화면에 설치
+
+1. 이 저장소를 다운로드하거나 클론합니다.
+   ```powershell
+   git clone https://github.com/ss0301kim-png/Stock.git
+   cd Stock
+   ```
+2. PowerShell을 열고 설치 스크립트를 실행합니다.
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .\scripts\windows\install.ps1
+   ```
+   Python 3.10+ 자동 감지, 가상환경(`.venv`) 생성, 의존성 설치, `.env` 생성, **바탕화면에 'KIS 단타봇' 바로가기**를 만들어줍니다.
+3. `.env` 파일(메모장으로 열기)에 앱키/시크릿/계좌번호/관심종목을 채워넣습니다.
+4. 바탕화면의 **'KIS 단타봇'** 아이콘을 더블클릭하면 콘솔 창이 열리며 실행됩니다. 끄려면 창에서 `Ctrl+C`.
+5. Python이 없다는 오류가 나오면 [python.org](https://www.python.org/downloads/)에서 설치 시 "Add python.exe to PATH"를 체크한 뒤 스크립트를 다시 실행하세요.
+
+### OCI(Oracle Cloud) 기존 Compute 인스턴스에 설치
+
+1. SSH로 인스턴스에 접속합니다.
+   ```bash
+   ssh <user>@<oci-instance-public-ip>
+   ```
+2. 저장소를 배포 경로로 바로 클론합니다(권장).
+   ```bash
+   sudo git clone https://github.com/ss0301kim-png/Stock.git /opt/kis-daytrading-bot
+   cd /opt/kis-daytrading-bot
+   ```
+3. 설치 스크립트 실행 (Oracle Linux/dnf, Ubuntu/apt 자동 감지):
+   ```bash
+   sudo bash scripts/oci/setup.sh
+   ```
+   Python/가상환경/의존성 설치, 전용 서비스 계정(`kisbot`) 생성, `.env` 생성, systemd 서비스(`kis-daytrader`) 등록까지 자동으로 처리합니다.
+4. `/opt/kis-daytrading-bot/.env`를 열어 앱키/시크릿/계좌번호/관심종목을 채워넣습니다. 처음엔 `IS_VIRTUAL=true`, `DRY_RUN=true`로 검증하세요.
+5. 서비스 시작 및 부팅 시 자동 시작 등록:
+   ```bash
+   sudo systemctl enable --now kis-daytrader
+   ```
+6. 상태/로그 확인:
+   ```bash
+   systemctl status kis-daytrader
+   journalctl -u kis-daytrader -f
+   ```
+7. `.env`를 수정한 뒤에는 반드시 재시작해야 반영됩니다: `sudo systemctl restart kis-daytrader`
+8. 봇은 KIS 서버로 나가는 요청(아웃바운드)만 하므로 OCI 보안 목록/방화벽에서 별도 인바운드 포트를 열 필요가 없습니다.
+9. 실전투자(`IS_VIRTUAL=false`, `DRY_RUN=false`)로 systemd에서 무인 실행할 경우, 콘솔이 없는 서비스 환경에서는 `main.py`의 대화형 확인(`START` 입력)을 자동으로 건너뛰고 `.env`의 `CONFIRM_LIVE_TRADING=YES`만으로 확인을 대체합니다. 즉, 서버에 이 값을 켜는 순간이 실질적인 "실행 확인"이므로 신중하게 설정하세요.
 
 ## 안전장치
 
@@ -89,6 +137,9 @@ src/strategy.py         이동평균 크로스 전략
 src/risk.py             포지션 사이징, 손절/익절, 일일 손실 한도
 src/trader.py           메인 매매 루프, 장마감 강제 청산
 src/logger_setup.py     로깅 설정
+tests/                  단위 테스트
+scripts/windows/         Windows 설치 스크립트 및 바탕화면 실행 런처
+scripts/oci/             OCI Compute 인스턴스 설치 스크립트 및 systemd 서비스 템플릿
 ```
 
 ## 참고

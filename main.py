@@ -15,6 +15,12 @@ def confirm_live_trading():
     print("경고: 실전투자 계좌로 실제 자동매매 주문을 실행합니다.")
     print("실제 자금 손실이 발생할 수 있습니다.")
     print("=" * 60)
+    if not sys.stdin.isatty():
+        logger.warning(
+            "비대화형 환경(서비스/서버)에서 실행 중이라 콘솔 확인을 건너뜁니다. "
+            ".env의 CONFIRM_LIVE_TRADING=YES 설정을 최종 확인으로 간주합니다."
+        )
+        return
     answer = input("계속하려면 'START'를 입력하세요: ")
     if answer.strip() != "START":
         print("취소되었습니다.")
